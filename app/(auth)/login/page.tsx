@@ -9,13 +9,12 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 
-interface RegisterForm {
+interface LoginForm {
   email: string
   password: string
-  confirmPassword: string
 }
 
-export default function RegisterPage() {
+export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -23,28 +22,30 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
-  } = useForm<RegisterForm>()
+  } = useForm<LoginForm>()
 
-  const password = watch('password')
-
-  const onSubmit = async (data: RegisterForm) => {
+  const onSubmit = async (data: LoginForm) => {
     setLoading(true)
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
       if (error) {
-        toast.error(error.message)
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password. Please check your credentials.')
+        } else {
+          toast.error(error.message)
+        }
         return
       }
 
-      toast.success('Account created successfully! Please sign in.')
-      router.push('/login')
+      toast.success('Signed in successfully')
+      router.push('/dashboard')
+      router.refresh()
     } catch (error) {
       toast.error('An unexpected error occurred')
     } finally {
@@ -62,8 +63,8 @@ export default function RegisterPage() {
           <h1 className="mt-6 text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             StreamAX
           </h1>
-          <h2 className="mt-2 text-xl font-semibold text-gray-800">Create Account</h2>
-          <p className="mt-2 text-sm text-gray-600">Join StreamAX and start streaming</p>
+          <h2 className="mt-2 text-xl font-semibold text-gray-800">Welcome Back</h2>
+          <p className="mt-2 text-sm text-gray-600">Sign in to your StreamAX account</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8">
@@ -110,37 +111,18 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                {...register('confirmPassword', {
-                  required: 'Please confirm your password',
-                  validate: (value) =>
-                    value === password || 'Passwords do not match',
-                })}
-                type="password"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Confirm your password"
-              />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-              )}
-            </div>
-
             <Button type="submit" loading={loading} className="w-full">
-              Create Account
+              Sign In
             </Button>
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Already have an account?{' '}
+                Don't have an account?{' '}
                 <Link
-                  href="/login"
+                  href="/register"
                   className="font-medium text-purple-600 hover:text-purple-500"
                 >
-                  Sign in
+                  Sign up
                 </Link>
               </p>
             </div>
