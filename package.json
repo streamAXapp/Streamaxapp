@@ -23,7 +23,8 @@
     "tailwind-merge": "^2.2.0",
     "framer-motion": "^10.16.16",
     "date-fns": "^3.0.6",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "react-router-dom": "^6.20.1"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
