@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  streamax-ffmpeg:
+    image: jrottenberg/ffmpeg:4.4-alpine
+    container_name: "streamax-${USER_ID}-${TIMESTAMP}"
+    restart: unless-stopped
+    volumes:
+      - /tmp/streamax/videos:/videos:ro
+    environment:
+      - RTMP_URL=${RTMP_URL}
+      - VIDEO_SOURCE=${VIDEO_SOURCE}
+      - SOURCE_TYPE=${SOURCE_TYPE}
+    command: >
+      sh -c "
+        if [ '${SOURCE_TYPE}' = 'file' ]; then
+          ffmpeg -re -stream_loop -1 -i /videos/${VIDEO_SOURCE} 
+                 -c:v libx264 -preset veryfast -maxrate 3000k -bufsize 6000k 
+                 -pix_fmt yuv420p -g 50 -c:a aac -b:a 160k -ac 2 -ar 44100 
+                 -f flv ${RTMP_URL}
+        elif [ '${SOURCE_TYPE}' = 'youtube' ]; then
+          apk add --no-cache python3 py3-pip && 
+          pip3 install yt-dlp &&
+          yt-dlp -f 'best[height<=720]' -g '${VIDEO_SOURCE}' | head -1 | 
+          xargs -I {} ffmpeg -re -stream_loop -1 -i {} 
+                           -c:v libx264 -preset veryfast -maxrate 3000k -bufsize 6000k 
+                           -pix_fmt yuv420p -g 50 -c:a aac -b:a 160k -ac 2 -ar 44100 
+                           -f flv ${RTMP_URL}
+        else
+          ffmpeg -re -stream_loop -1 -i '${VIDEO_SOURCE}' 
+                 -c:v libx264 -preset veryfast -maxrate 3000k -bufsize 6000k 
+                 -pix_fmt yuv420p -g 50 -c:a aac -b:a 160k -ac 2 -ar 44100 
+                 -f flv ${RTMP_URL}
+        fi
+      "
+    networks:
+      - streamax_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+networks:
+  streamax_network:
+    external: true
